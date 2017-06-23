@@ -1,0 +1,6 @@
+/wiki_in/
+/wiki_out_html/
+/out_*/
+/filters/*.o
+/filters/*.hi
+/filters/bin/
