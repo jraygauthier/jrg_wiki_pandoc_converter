@@ -21,7 +21,7 @@ Mandatory
 
     Required at runtime by `plantuml_filter.hs`.
 
- -  graphiz
+ -  graphviz
 
     For the `dot` command required at runtime by `dot_filter.hs`.
 
@@ -35,6 +35,9 @@ Optional (but strongly recommanded)
     2016/04/07. If this minimal requirement is met (implying proper nix installation), then
     all other prerequisites will be automatically installed by the `nix-shell` calls documented
     below.
+    
+Please take a look at the [detailed setup section](#detailed-setup) for per platform steps to
+perform as prerequisites.
 
 
 Running the tool
@@ -141,6 +144,47 @@ change in interfaces related with the addition of an attributes field to both `I
 Please make sure your [nixpkgs repository] is up-to-date. We tested this tool against a nixpkgs
 at revision `551296a` taken at date 2016/04/07. This revision came with a `pandoc-types`
 library at version `1.16.1`.
+
+
+
+Detailed setup {#detailed-setup}
+--------------
+
+### Windows
+
+Here is the minimal setup steps required assuming filters are prebuilt for you platform:
+
+ -  Install [Git for windows](https://git-for-windows.github.io/).
+
+ -  Install [pandoc](http://pandoc.org/installing.html).
+
+ -  Install [graphviz](http://www.graphviz.org/Download_windows.php)
+
+    You should ensure the binaries for this package (e.g: `C:\Program Files (x86)\Graphviz2.38\bin`)
+    are added to `PATH`.
+
+ -  Install [jre](https://www.java.com/en/download/).
+
+ -  Install [plantuml](http://plantuml.com/download).
+
+    The environement variable `PLANTUML_JAR` should point on the `*.jar` file.
+
+
+Additionnally, if the filters are not prebuilt for your platform or you mean to modify them, 
+here's the supplementary setup steps to perform:
+
+ -  Install [haskell-platform-full](https://www.haskell.org/downloads).
+
+    Installing the full version is important as it is non trivial to build the network package
+    under windows.
+
+ -  From a Cmd shell, install the required haskell packages using cabal:
+
+    ~~~
+    cabal update
+    cabal install pandoc-types process-streaming pipes-transduce SHA utf8-string hslogger
+    ~~~
+
 
 
 

@@ -16,6 +16,7 @@ import Data.List (intersperse)
 import Data.Maybe
 import Data.List.Split
 
+import System.Environment (lookupEnv)
 import System.Process.Streaming
 import qualified Pipes.Transduce.Text as PTLT
 import qualified Data.Text.Lazy as LT
@@ -124,8 +125,9 @@ parseArgs rawArgs = do
 
 runPlantUML :: Maybe String -> FilePath -> String -> IO (Either String FilePath)
 runPlantUML maybeOutType outFilename content = do
+    (exe, args) <- procWArgs
     createDirectoryIfMissing True . takeDirectory $  outFilename
-    (o,stderr,ec) <- execute (piped (proc exeName args)) $ 
+    (o,stderr,ec) <- execute (piped (proc exe args)) $ 
           (\_ o e ec -> (o,e,ec)) 
           <$>
           feedBytes (Just . fromString $ content) 
@@ -140,14 +142,18 @@ runPlantUML maybeOutType outFilename content = do
       then
         Right outFilename
       else
-        Left (errorMsg ec (LT.unpack stderr))
+        Left (prettyPrintProcessError exe args ec (LT.unpack stderr))
   where
-    exeName = "plantuml"
     ftParams = case maybeOutType of
       Just ft -> ["-t" ++ ft]
       Nothing -> [] -- It is assumed here that default is a `png` file.
-    args = ["-pipe"] ++ ftParams
-    errorMsg ec stderr = prettyPrintProcessError exeName args ec stderr
+    commonArgs = ["-pipe"] ++ ftParams
+    procWArgs :: IO((String, [String]))
+    procWArgs = do
+      envVar <- lookupEnv "PLANTUML_JAR"
+      return $ case envVar of
+        Just jarFile -> ("java", ["-jar", jarFile] ++ commonArgs)
+        Nothing -> ("plantuml", commonArgs)
 
 {-
   Generic functions that could be shared with other plugins.
