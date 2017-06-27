@@ -213,7 +213,9 @@ while read inF; do
     dot_filter "$inF" "$OUT_DIR/img" "/img" | \
     plantuml_filter "$inF" "$OUT_DIR/img" "/img" | \
     adapt_local_page_link_filter "$OUT_PAGE_EXT" "$pathFromInDirToInRoot" | \
-    pandoc -s -f json -t html --mathjax --toc --toc-depth=4 > "$OUT_DIR/$outF"
+    pandoc -s -f json -t html --mathjax --toc --toc-depth=4 > "$OUT_DIR/$outF" || \
+      { echo "Error converting markdown input file \"$WIKI_IN_DIR/$inF\" to \"$OUT_DIR/$outF\" \"$OUT_TYPE\" output."; \
+        rm -f "$OUT_DIR/$outF"; exit 1; }
 
   fi
 
