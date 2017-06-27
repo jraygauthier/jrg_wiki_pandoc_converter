@@ -135,10 +135,18 @@ if [ -z "$ASSUME_PREBUILT_FILTERS" ]; then
 
 else
 
-  echo "Validating that pandoc filters under \`$FILTERS_DIR\` are available in precompiled form."
+  PRECOMPILED_DIR="$FILTERS_DIR/bin__${OSTYPE}-`uname -m`"
+  
+  echo "Validating that pandoc filters under \`$FILTERS_DIR\` are available in precompiled form, possibly under \"$PRECOMPILED_DIR\"."
   echo "---------------------------------------------------------------------------------------------"
   echo ""
 
+
+  if [ -d "$PRECOMPILED_DIR" ]; then
+    mkdir -p "$FILTERS_BIN_DIR"
+    cp -a -t "$FILTERS_BIN_DIR" "$PRECOMPILED_DIR/."
+  fi
+  
   find "$FILTERS_DIR" -type f -name "*.hs" | \
   while read filterF; do 
 
