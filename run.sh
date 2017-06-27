@@ -9,9 +9,10 @@ DEFAULT_WIKI_IN_REPO_URL="https://my/url/to/jrg_wiki"
 WIKI_IN_REPO_URL="${1:-$DEFAULT_WIKI_IN_REPO_URL}"
 INCREMENTAL="${2:-}"
 NO_GIT_SYNC="${3:-}"
-OUT_TYPE="${4:-html}"
-OUT_DIR="${5:-$SCRIPT_DIR/out_${OUT_TYPE}}"
-WIKI_IN_DIR="${6:-$SCRIPT_DIR/wiki_in}"
+ASSUME_PREBUILT_FILTERS="${4:-}"
+OUT_TYPE="${5:-html}"
+OUT_DIR="${6:-$SCRIPT_DIR/out_${OUT_TYPE}}"
+WIKI_IN_DIR="${7:-$SCRIPT_DIR/wiki_in}"
 
 
 if [ -z "$NO_GIT_SYNC" ]; then
@@ -56,79 +57,99 @@ fi
 
 FILTERS_DIR="$SCRIPT_DIR/filters"
 FILTERS_BIN_DIR="$FILTERS_DIR/bin"
+export PATH="$PATH:$FILTERS_BIN_DIR:$FILTERS_DIR"
 
 
-echo "Compiling all pandoc filters found under \`$FILTERS_DIR\` to \`$FILTERS_BIN_DIR\`."
-echo "--------------------------------------------------------------------------"
-echo ""
 
-getMinimalPandocTypeVersion() {
-  echo "1.16"
-}
+if [ -z "$ASSUME_PREBUILT_FILTERS" ]; then
 
-getCurrentPandocTypeVersion() {
-  if ! command -v ghc-pkg >/dev/null 2>&1 ; then
-    return 1 # False
+  echo "Compiling all pandoc filters found under \`$FILTERS_DIR\` to \`$FILTERS_BIN_DIR\`."
+  echo "--------------------------------------------------------------------------"
+  echo ""
+
+  getMinimalPandocTypeVersion() {
+    echo "1.16"
+  }
+
+  getCurrentPandocTypeVersion() {
+    if ! command -v ghc-pkg >/dev/null 2>&1 ; then
+      return 1 # False
+    fi
+
+    if ! local ghcPkgPandocTypesVersionField="$(2>/dev/null ghc-pkg field pandoc-types version)"; then
+      return 1 # False
+    fi
+
+    if [ -z "$ghcPkgPandocTypesVersionField" ]; then
+      return 1 # False
+    fi
+
+    local pandocTypesV="$(echo "${ghcPkgPandocTypesVersionField}" | sed -r -e 's/version: ([0-9\.]+)/\1/')"
+    echo "$pandocTypesV"
+  }
+
+  foundMinimalPandocTypeVersion() {
+
+    if ! local pandocTypesV="$(getCurrentPandocTypeVersion)"; then
+      return 1 # False
+    fi
+
+    if [ -z "$pandocTypesV" ]; then
+      return 1 # False
+    fi
+
+    test "$(echo "$pandocTypesV" | sed -r -e 's/([0-9]+)\.[0-9]+\.[0-9]\.[0-9]+/\1/')" -eq '1' &&
+    test "$(echo "$pandocTypesV" | sed -r -e 's/[0-9]+\.([0-9]+)\.[0-9]\.[0-9]+/\1/')" -ge '16'
+  }
+
+
+
+  if ! foundMinimalPandocTypeVersion; then
+    >&2 echo "ERROR: Could not find minimal \`$(getMinimalPandocTypeVersion)\` \`pandoc-types\` "\
+             "library version required to build \`pandoc\` filters. Current version "\
+             "is \`$(getCurrentPandocTypeVersion)\`."
+    exit 1
   fi
 
-  if ! local ghcPkgPandocTypesVersionField="$(2>/dev/null ghc-pkg field pandoc-types version)"; then
-    return 1 # False
-  fi
+  # Compile pandoc filters
+  mkdir -p "$FILTERS_BIN_DIR"
 
-  if [ -z "$ghcPkgPandocTypesVersionField" ]; then
-    return 1 # False
-  fi
+  find "$FILTERS_DIR" -type f -name "*.hs" | \
+  while read filterF; do 
 
-  local pandocTypesV="$(echo "${ghcPkgPandocTypesVersionField}" | sed -r -e 's/version: ([0-9\.]+)/\1/')"
-  echo "$pandocTypesV"
-}
+    filerName="`basename "$filterF" .hs`"
 
-foundMinimalPandocTypeVersion() {
+    if [ ! -e "$FILTERS_BIN_DIR/$filerName" ] || [ "$filterF" -nt "$FILTERS_BIN_DIR/$filerName" ]; then
 
-  if ! local pandocTypesV="$(getCurrentPandocTypeVersion)"; then
-    return 1 # False
-  fi
+      echo "$filerName"
 
-  if [ -z "$pandocTypesV" ]; then
-    return 1 # False
-  fi
+      ghc -o "$FILTERS_BIN_DIR/$filerName" --make "$filterF"
 
-  test "$(echo "$pandocTypesV" | sed -r -e 's/([0-9]+)\.[0-9]+\.[0-9]\.[0-9]+/\1/')" -eq '1' &&
-  test "$(echo "$pandocTypesV" | sed -r -e 's/[0-9]+\.([0-9]+)\.[0-9]\.[0-9]+/\1/')" -ge '16'
-}
+    fi
+
+  done
 
 
-if ! foundMinimalPandocTypeVersion; then
-  >&2 echo "ERROR: Could not find minimal \`$(getMinimalPandocTypeVersion)\` \`pandoc-types\` "\
-           "library version required to build \`pandoc\` filters. Current version "\
-           "is \`$(getCurrentPandocTypeVersion)\`."
-  exit 1
+  echo ""
+  echo ""
+
+else
+
+  echo "Validating that pandoc filters under \`$FILTERS_DIR\` are available in precompiled form."
+  echo "---------------------------------------------------------------------------------------------"
+  echo ""
+
+  find "$FILTERS_DIR" -type f -name "*.hs" | \
+  while read filterF; do 
+
+    filerName="`basename "$filterF" .hs`"
+
+    command -v $filerName >/dev/null 2>&1 || \
+      { echo "Filter \"${filerName}\" could not be found in precompiled form. Please compile it first and make in available in \"PATH\""; exit 1; }
+    
+  done
 fi
 
-# Compile pandoc filters
-mkdir -p "$FILTERS_BIN_DIR"
-
-find "$FILTERS_DIR" -type f -name "*.hs" | \
-while read filterF; do 
-
-  filerName="`basename "$filterF" .hs`"
-
-  if [ ! -e "$FILTERS_BIN_DIR/$filerName" ] || [ "$filterF" -nt "$FILTERS_BIN_DIR/$filerName" ]; then
-
-    echo "$filerName"
-
-    ghc -o "$FILTERS_BIN_DIR/$filerName" --make "$filterF"
-
-  fi
-
-done
-
-
-echo ""
-echo ""
-
-
-export PATH="$PATH:$FILTERS_BIN_DIR:$FILTERS_DIR"
 
 IN_PAGE_EXT="md"
 OUT_PAGE_EXT="html"

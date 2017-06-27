@@ -11,6 +11,7 @@ WIKI_OUT_HTML_REPO_URL="${2:-$DEFAULT_WIKI_OUT_HTML_REPO_URL}"
 INCREMENTAL="${3:-}"
 NO_IN_GIT_SYNC="${4:-}"
 NO_OUT_GIT_SYNC="${5:-}"
+ASSUME_PREBUILT_FILTERS="${6:-}"
 
 SCRIPT_DIR=`cd $(dirname $0) > /dev/null;pwd`
 
@@ -30,7 +31,7 @@ if [ -z "$NO_OUT_GIT_SYNC" ]; then
 fi
 
 nix-shell --run \
-  "$CONVERTER_ROOT_DIR/run.sh \"$WIKI_IN_REPO_URL\" \"$INCREMENTAL\" \"$NO_IN_GIT_SYNC\" \"html\" \"$WIKI_OUT_HTML_DIR\"" \
+  "$CONVERTER_ROOT_DIR/run.sh \"$WIKI_IN_REPO_URL\" \"$INCREMENTAL\" \"$NO_IN_GIT_SYNC\" \"$ASSUME_PREBUILT_FILTERS\" \"html\" \"$WIKI_OUT_HTML_DIR\"" \
   "$CONVERTER_ROOT_DIR/shell.nix"
 
 
