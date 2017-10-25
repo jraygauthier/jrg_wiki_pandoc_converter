@@ -7,12 +7,13 @@ SCRIPT_DIR=`cd $(dirname $0) > /dev/null;pwd`
 DEFAULT_WIKI_IN_REPO_URL="https://my/url/to/jrg_wiki"
 
 WIKI_IN_REPO_URL="${1:-$DEFAULT_WIKI_IN_REPO_URL}"
-INCREMENTAL="${2:-}"
-NO_GIT_SYNC="${3:-}"
-ASSUME_PREBUILT_FILTERS="${4:-}"
-OUT_TYPE="${5:-html}"
-OUT_DIR="${6:-$SCRIPT_DIR/out_${OUT_TYPE}}"
-WIKI_IN_DIR="${7:-$SCRIPT_DIR/wiki_in}"
+WIKI_IN_SUBSET="${2:-.}"
+INCREMENTAL="${3:-}"
+NO_GIT_SYNC="${4:-}"
+ASSUME_PREBUILT_FILTERS="${5:-}"
+OUT_TYPE="${6:-html}"
+OUT_DIR="${7:-$SCRIPT_DIR/out_${OUT_TYPE}}"
+WIKI_IN_DIR="${8:-$SCRIPT_DIR/wiki_in}"
 
 
 if [ -z "$NO_GIT_SYNC" ]; then
@@ -173,7 +174,7 @@ echo "Copying non page files recursively from \`$IN_ROOT_DIR\` to \`$OUT_DIR\`."
 echo "--------------------------------------------------------------------------"
 echo ""
 
-find . -type f ! -name "*.md" ! -path "./.git/*" | \
+find "$WIKI_IN_SUBSET" -type f ! -name "*.md" ! -path "./.git/*" | \
 while read inF; do
 
   outF="$inF"
@@ -200,7 +201,7 @@ echo ""
 
 
 #echo "./Tests/Plantuml.md" | \
-find . -type f -name "*.md" ! -path "./.git/*" | \
+find "$WIKI_IN_SUBSET" -type f -name "*.md" ! -path "./.git/*" | \
 while read inF; do 
 
   inDir=`dirname $inF`
