@@ -93,8 +93,12 @@ absPathToRelPath pathToRootDir absPath
 addMissingExtensionToPath :: String -> FilePath -> FilePath
 addMissingExtensionToPath extension path
   | null path = path -- Do not add extension for empty path (proper support `[my link](#tgt-anchor)` links).
+  | ( ".md" == takeExtension path ) = dropExtension path ++ "." ++ extension
   | isPathWithExtension path = path -- Do not add extension when there already is one.
   | otherwise = path ++ "." ++ extension
+  where
+    hasSourceExt path = case (splitExtension path) of
+      (_,ext) -> ext == ".md" -- TODO: Hardcoded, replace with arg. 
 
 
 adaptLocalLinkPath :: Maybe String -> Maybe FilePath -> FilePath -> FilePath

@@ -15,7 +15,6 @@ OUT_TYPE="${6:-html}"
 OUT_DIR="${7:-$SCRIPT_DIR/out_${OUT_TYPE}}"
 WIKI_IN_DIR="${8:-$SCRIPT_DIR/wiki_in}"
 
-
 if [ -z "$NO_GIT_SYNC" ]; then
 
   echo "Updating wiki repository from \`$WIKI_IN_REPO_URL\` to \`$WIKI_IN_DIR\`."
