@@ -1,8 +1,9 @@
-{ nixpkgs ? import <nixpkgs> {}, compiler ? "default" }:
+{ usePinnedNixpkgs ? true, compiler ? "default" }:
 
 let
+  sandboxPkgs = (import ./nix/sandbox-pkgs.nix) { inherit usePinnedNixpkgs; };
 
-  inherit (nixpkgs) pkgs;
+  inherit (sandboxPkgs) pkgs;
 
   f = { mkDerivation, base, bytestring, directory
       , filepath, filestore, hslogger, mtl, network, network-uri
@@ -18,7 +19,7 @@ let
           hslogger mtl network network-uri pandoc pandoc-types process SHA
           utf8-string process-streaming pipes-transduce
         ];
-        executableSystemDepends = with pkgs; [ 
+        executableSystemDepends = with pkgs; [
               curl
               wget
               graphviz
